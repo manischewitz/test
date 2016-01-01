@@ -107,6 +107,10 @@ public class CALCULATOR {
     buttonRIGHTrbr.addActionListener(calcMirror);
     buttonPI.addActionListener(calcMirror);
     buttonCOS.addActionListener(calcMirror);
+    buttonSIN.addActionListener(calcMirror);
+    buttonTAN.addActionListener(calcMirror);
+    buttonSQRT.addActionListener(calcMirror);
+    buttonLOG.addActionListener(calcMirror);
     buttonDOT.addActionListener(calcMirror);
     buttonEQUAL.addActionListener(calcMirror);
     

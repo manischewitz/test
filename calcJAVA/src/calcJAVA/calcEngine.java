@@ -3,24 +3,32 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Pattern;
+
 
 public class calcEngine implements ActionListener{
 
 		CALCULATOR parent;
 	
+	RPn rpn = new RPn();
+	
+	Pattern pat = Pattern.compile(" ");
+	Pattern pat2 = Pattern.compile("");
+	
+	boolean checker = false;
+	
 	String numbers = new String(); //строка цифр
-	String spstr = new String(); //скобки
-	String degree = new String();
-	String minusDeg = new String();
+	
 	int o,c;
-	String operDump = new String();
 	
-	ArrayList <String> inputStream = new ArrayList<String>(); //ВХОД
-    ArrayList<String> first = new ArrayList<String>();
-	String[] first1 = {}; 
+	ArrayList<String> inputStream = new ArrayList<String>(); //ВХОД
+    ArrayList<String> numbersDump = new ArrayList<String>(); 
+    ArrayList<String> operandsDump = new ArrayList<String>();
+    ArrayList<String> operandsDumpMain = new ArrayList<String>();
+    ArrayList<String> operands = new ArrayList<String>();
 	
-	ArrayList<String> operands = new ArrayList<String>();
-	String[] operands1 = {};
+    String[] operands1 = {};
 	
 	calcEngine(CALCULATOR parent){
         this.parent = parent;
@@ -40,35 +48,65 @@ public class calcEngine implements ActionListener{
 	 //degree
 	
 	if(src == parent.buttonDEGREE){
-		numbers = numbers+" ";
-        degree = "^";
+		numbers = numbers+" ^ ";
+		inputStream.add("^");
+		displaytextfield = displaytextfield+"^";
+		src = parent.buttonLEFTrbr;
      }
 	/**
-	*ПРИОРИТЕТ В МАССИВЕ
-	*ОТР ЧИСЛА 
-	*РАВНО
 	*УДАЛЕНИЕ
-	*СИН КОС...
 	*-(455+55)+(455+55)
 	*-2-26--2
 	*2*2-4/6-2+5-8*2
+	*продолжительность сеанса
 	*2*2-5+4-8/1+2-5-6-1+24*2
-	*^ -2
+	*2^2^-2
+	*2.0E-5
 	*ошибки (два и более повт знака)
+	*рандом 
+	*остаток от деления
+	*округление
+	*Math.log10(n) — возвращает значение десятичного логарифма числа n.
+	*ans
 	*/
 	
-	//pi,cos,sin WIP
-	/*
-	if(src == parent.buttonPI){
-		numbers = numbers+"3.141";
-        inputStream.add("3.141");
-       }
+	//cos, sin, tan, log, sqrt
+	
+	if(src == parent.buttonSIN){
+		numbers = numbers+"SIN ";
+		inputStream.add("SIN");
+		displaytextfield = displaytextfield+"SIN";
+		src = parent.buttonLEFTrbr;
+	}
 	
 	if(src == parent.buttonCOS){
-		numbers = numbers+"9";
-        parent.dfe.setText(displaytextfield+"9");
-      }
-	*/
+		numbers = numbers+"COS ";
+		inputStream.add("COS");
+		displaytextfield = displaytextfield+"COS";
+		src = parent.buttonLEFTrbr;
+	}
+	
+	if(src == parent.buttonTAN){
+		numbers = numbers+"TAN ";
+		inputStream.add("TAN");
+		displaytextfield = displaytextfield+"TAN";
+		src = parent.buttonLEFTrbr;
+    }
+	
+	if(src == parent.buttonSQRT){
+		numbers = numbers+"SQRT ";
+		inputStream.add("SQRT");
+		displaytextfield = displaytextfield+"SQRT";
+		src = parent.buttonLEFTrbr;
+    }
+	
+	if(src == parent.buttonLOG){
+		numbers = numbers+"LOG ";
+		inputStream.add("LOG");
+		displaytextfield = displaytextfield+"LOG";
+		src = parent.buttonLEFTrbr;
+    }
+	
 	//dot
 	
 	if(src == parent.buttonDOT){
@@ -78,64 +116,90 @@ public class calcEngine implements ActionListener{
 	
 	//СКОБКИ
 	
-	if(src == parent.buttonLEFTrbr && !spstr.equals("open")){
-		o++;
-		spstr = "open";
-		numbers = numbers+"";
+	if(src == parent.buttonLEFTrbr){
 		inputStream.add("(");
-	}else if(src == parent.buttonLEFTrbr && spstr.equals("open")){
-		o++;
-		spstr ="close";
-		inputStream.add("(");
-		numbers = numbers+"";
-		for(int i = 0; i < operands.size(); i++){
-			operDump = operDump+operands.get(i);
+		parent.dfe.setText(displaytextfield+"(");
+	}
+	
+	if(src == parent.buttonLEFTrbr && o == c){          //если скобки открываються в первый раз
+		o++; 
+		numbersDump.add(numbers);                 
+		numbers = "";
+		
+		for(int i = 0;i < operands.size();i++){
+			
+			if(operands.get(i).equals(" ")){
+			   operands.remove(i);
+			}
+			operandsDumpMain.add(operands.get(i));
 		}
+       operands.clear();
+	}else if(src == parent.buttonLEFTrbr){
+		o++; 
+		numbersDump.add(numbers);                 //добавляет строку в массив строк
+		numbers = "";                             //очищает строку для работы с ней
+		
+		for(int i = 0;i < operands.size();i++){
+			
+			if(operands.get(i).equals(" ")){
+				operands.remove(i);
+			}
+			operandsDump.add(operands.get(i));
+		}
+		
 		operands.clear();
 	}
 	
-	if(src == parent.buttonRIGHTrbr && spstr.equals("open")){
-		c++;
-		numbers = numbers+"";
-		spstr = "close";
+	if(src == parent.buttonRIGHTrbr){
+		c++;                                                          //+1 к количеству закрывающих скобок
 		inputStream.add(")");
-		first1 = first.toArray(new String[first.size()]); //превращаю arrList в обычномассив
-		String[] firstreverse = new String[first1.length];
-		
-		for(byte i = 0; i < first1.length; i++){
-		   firstreverse[i] = first1[first1.length-i-1];
-		   numbers= numbers+firstreverse[i];
-		}
-		for(byte i = 0; i < first.size(); i++){
-			first.remove(i);
-		}
-	}else if(src == parent.buttonRIGHTrbr && spstr.equals("close")){
-		c++;
-		numbers = numbers+"";
-		spstr = "open";
-		inputStream.add(")");
-		first1 = operands.toArray(new String[operands.size()]); //превращаю arrList в обычномассив
-		String[] firstreverse = new String[first1.length];
-		
-		for(byte i = 0; i < first1.length; i++){
-		   firstreverse[i] = first1[first1.length-i-1];
-		   numbers= numbers+firstreverse[i];
-		}
-		for(byte i = 0; i < operands.size(); i++){
-			operands.remove(i);
-		}
 	}
 	
+	if(src == parent.buttonRIGHTrbr){
+		
+		operands1 = operands.toArray(new String[operands.size()]);    //преобразует массив с действиями в обычный массив
+		String[] operandsFinal = new String[operands.size()]; 
+		
+		for(int j = 0; j<operands.size(); j++){
+			try{
+			operandsFinal[j] = operands1[operands.size()-j-1];
+			numbers = numbers+operandsFinal[j];
+			}catch(IndexOutOfBoundsException e){}
+		}
+		
+		String ans = rpn.getAnswer(numbers);
+		numbers = "";
+		numbers = numbers+numbersDump.get(numbersDump.size()-1)+ans;
+		
+		operands.clear();           //после выполнения действий этот массив более не нужен
+		
+		try{
+		operands.add(operandsDump.get(0));
+		operandsDump.remove(0);
+		}catch(IndexOutOfBoundsException e){}
+		
+		numbersDump.remove(numbersDump.size()-1);
+	}
+	
+	if(src == parent.buttonRIGHTrbr && o == c){
+		
+	  for(int j = 0; j<operandsDumpMain.size(); j++){
+		try{
+			operands.add(operandsDumpMain.get(j));
+			operandsDumpMain.remove(j);
+		}catch(IndexOutOfBoundsException e){}
+	  }
+	}
+	
+	
+	//2*26^(3^(SIN(44)*2/COS(6))
 	//*+/-
 	
 	int arrI = operands.lastIndexOf(" *");
 	int arrSPLIT = operands.lastIndexOf(" /");
-	int arr4OPENBRACES = first.lastIndexOf(" *");
-	int arr4SPLITBRACES = first.lastIndexOf(" /");
 	int arrPLUS = operands.lastIndexOf(" +");
 	int arrMINUS = operands.lastIndexOf(" -");
-	int arrPLUSBraces = first.lastIndexOf(" +");
-	int arrMINUSBraces = first.lastIndexOf(" -");
+	
 	
 	//ПЛЮС
 	
@@ -144,51 +208,29 @@ public class calcEngine implements ActionListener{
 	}
 	
 	
-	if(src == parent.buttonPLUS && !spstr.equals("open") && operands.contains(" *")){
+	if(src == parent.buttonPLUS && operands.contains(" *")){
 		operands.remove(arrI);
 		numbers= numbers+" *";
-	}else if(src == parent.buttonPLUS && !spstr.equals("open") && operands.contains(" /")){
+	}else if(src == parent.buttonPLUS && operands.contains(" /")){
 		operands.remove(arrSPLIT);
-		numbers= numbers+" /";
-	}else if(src == parent.buttonPLUS && spstr.equals("open") && first.contains(" *")){
-		first.remove(arr4OPENBRACES);
-		numbers= numbers+" /";
-	}else if(src == parent.buttonPLUS && spstr.equals("open") && first.contains(" /")){
-		first.remove(arr4SPLITBRACES);
 		numbers= numbers+" /";
 	}
 	
-	
-	if(src == parent.buttonPLUS && !spstr.equals("open") && !operands.contains(" -") && !operands.contains(" +")){ //if нет умножения, деления, плюсов, минусов скобки закрыты
+	if(src == parent.buttonPLUS && !operands.contains(" -") && !operands.contains(" +")){ //if нет умножения, деления, плюсов, минусов 
 		
 		numbers= numbers+" ";   
 		operands.add(" +");
 		
-	}else if(src == parent.buttonPLUS && !spstr.equals("open") && operands.contains(" +")){ //if есть плюс скобки закрыты
+	}else if(src == parent.buttonPLUS && operands.contains(" +")){ //if есть плюс 
 		
 		operands.set(arrPLUS," +");
 		numbers= numbers+" + ";
 		
-	}else if(src == parent.buttonPLUS && !spstr.equals("open") && operands.contains(" -")){ //if есть минус скобки закрыты
+	}else if(src == parent.buttonPLUS && operands.contains(" -")){ //if есть минус 
 		
 		operands.set(arrMINUS," +");
 		numbers= numbers+" - ";		
 
-	}else if(src == parent.buttonPLUS && spstr.equals("open") && !first.contains(" -") && !first.contains(" +")){
-		
-		first.add(" +");
-		numbers= numbers+" ";
-		
-	}else if(src == parent.buttonPLUS && spstr.equals("open") && first.contains(" +")){
-		
-		first.set(arrPLUSBraces," +");
-		numbers= numbers+" + ";
-		
-	}else if(src == parent.buttonPLUS && spstr.equals("open") && first.contains(" -")){
-		
-		first.set(arrMINUSBraces," +");
-		numbers= numbers+" - ";
-		
 	}
 	
 	
@@ -197,35 +239,21 @@ public class calcEngine implements ActionListener{
 		inputStream.add("*");
 	}
 	
-	if(src == parent.buttonMULTIPLY && !spstr.equals("open") && !operands.contains(" *") && !operands.contains(" /")){ //if скобки закрыты нет умножения и деления
+	if(src == parent.buttonMULTIPLY && !operands.contains(" *") && !operands.contains(" /")){ //if нет умножения и деления
 		
 		operands.add(" *");
 		numbers= numbers+" ";
 		
-	}else if(src == parent.buttonMULTIPLY && !spstr.equals("open") && operands.contains(" *")){//if скобки закрыты есть умножение в массиве
+	}else if(src == parent.buttonMULTIPLY && operands.contains(" *")){//if  есть умножение в массиве
 		
 		operands.set(arrI," *");
 		numbers= numbers+" * ";
 		
-	}else if(src == parent.buttonMULTIPLY && !spstr.equals("open") && operands.contains(" /")){ //if скобки закрыты есть деление
+	}else if(src == parent.buttonMULTIPLY && operands.contains(" /")){ //if  есть деление
 		
 		operands.set(arrSPLIT," *"); //умножение вытолкнет деление в строку встав на его место
 		numbers = numbers+" / ";
 		
-	}else if(src == parent.buttonMULTIPLY && spstr.equals("open") && !first.contains(" *") && !operands.contains(" /")){//if скобки открыты в массиве ничего нет
-		
-		first.add(" *");
-		numbers= numbers+" ";
-		
-	}else if(src == parent.buttonMULTIPLY && spstr.equals("open") && first.contains(" *")){
-		
-		first.set(arr4OPENBRACES," *");
-        numbers = numbers+" * ";
-        
-	}else if(src == parent.buttonMULTIPLY && spstr.equals("open") && first.contains(" /")){
-		
-		first.set(arr4SPLITBRACES, " *");
-		numbers = numbers+" / ";
 	}
 	
 	//ДЕЛЕНИЕ
@@ -233,57 +261,35 @@ public class calcEngine implements ActionListener{
 		inputStream.add("/");
 	}
 	
-	if(src == parent.buttonSPLIT && !spstr.equals("open") && !operands.contains(" *") && !operands.contains(" /")){ //если в массиве нет умножения и деления
+	if(src == parent.buttonSPLIT && !operands.contains(" *") && !operands.contains(" /")){ //если в массиве нет умножения и деления
 		
 		operands.add(" /");
 		numbers= numbers+" ";
 		
-	}else if(src == parent.buttonSPLIT && !spstr.equals("open") && operands.contains(" *")){//if скобки закрыты есть умножение в массиве
+	}else if(src == parent.buttonSPLIT && operands.contains(" *")){//if есть умножение в массиве
 		
 		operands.set(arrI," /"); //заменил умножение делением
 		numbers= numbers+" * ";  //вытолкнул умножение
 		
-	}else if(src == parent.buttonSPLIT && !spstr.equals("open") && operands.contains(" /")){ //if скобки закрыты есть деление
+	}else if(src == parent.buttonSPLIT && operands.contains(" /")){ //if  есть деление
 		
 		operands.set(arrSPLIT," /"); //деление вытолкнет деление в строку встав на его место
 		numbers = numbers+" / ";
 		
-	}else if(src == parent.buttonSPLIT && spstr.equals("open") && !first.contains(" *") && !operands.contains(" /")){  //если в массиве нет деления,умножения скобки открыты
-		
-		first.add(" /");
-		numbers= numbers+" ";
-		
-	}else if(src == parent.buttonSPLIT && spstr.equals("open") && first.contains(" *")){
-		
-		first.set(arr4OPENBRACES," /");
-		numbers= numbers+" * ";
-		
-	}else if(src == parent.buttonSPLIT && spstr.equals("open") && first.contains(" /")){
-		
-		first.set(arr4SPLITBRACES," /");
-		numbers= numbers+" / ";
 	}
 	
 	//МИНУС
 	boolean coupleMinus = false;
-	boolean coupleMinus4braces = false;
-	
 	
 	if(src == parent.buttonMINUS && !inputStream.isEmpty()){                                                                                                //добавляет в imputStream минус если это не первый знак
 		inputStream.add("-");
 	}
 	
-	if(src == parent.buttonMINUS && !spstr.equals("open") && operands.contains(" *") && !coupleMinus == true){
+	if(src == parent.buttonMINUS && operands.contains(" *") && !inputStream.get(inputStream.size()-2).equals("*") && !coupleMinus == true){                 //толкает умножение или деление если минус не следующий за ними знак
 		operands.remove(arrI);
 		numbers= numbers+" *";
-	}else if(src == parent.buttonMINUS && !spstr.equals("open") && operands.contains(" /") && !coupleMinus == true){
+	}else if(src == parent.buttonMINUS && operands.contains(" /") && !inputStream.get(inputStream.size()-2).equals("/")  && !coupleMinus == true){
 		operands.remove(arrSPLIT);
-		numbers= numbers+" /";
-	}else if(src == parent.buttonMINUS && spstr.equals("open") && first.contains(" *") && !coupleMinus == true){
-		operands.remove(arr4OPENBRACES);
-		numbers= numbers+" *";
-	}else if(src == parent.buttonMINUS && spstr.equals("open") && first.contains(" /") && !coupleMinus == true){
-		operands.remove(arr4SPLITBRACES);
 		numbers= numbers+" /";
 	}
     
@@ -297,50 +303,31 @@ public class calcEngine implements ActionListener{
 		
 		numbers = numbers+"-";
 		
-	}else if(src == parent.buttonMINUS && degree.equals("^")){                                                      
-		                                                                                                                                                      //if есть потребность в отрицательной степени
-		minusDeg = "yes";
-		System.out.println("wed");
 	}else if((src == parent.buttonMINUS && inputStream.get(inputStream.size()-2).equals("*")) || (src == parent.buttonMINUS && inputStream.get(inputStream.size()-2).equals("/")) ||
 			(src == parent.buttonMINUS && inputStream.get(inputStream.size()-2).equals("+"))){ 
 		                                                                                                                                                      //if пперед минусом стоит умножение, деление или плюс  
 		numbers =numbers+"-";
 		
-	}else if(src == parent.buttonMINUS && !spstr.equals("open") && !operands.contains(" -") && !operands.contains(" +") && !coupleMinus == true){
+	}else if(src == parent.buttonMINUS && !operands.contains(" -") && !operands.contains(" +") && !coupleMinus == true){
 		
 		operands.add(" -");
 		numbers= numbers+" ";
 		
-	}else if(src == parent.buttonMINUS && !spstr.equals("open") && operands.contains(" -") && !inputStream.get(inputStream.size()-2).equals("-") && !coupleMinus == true){ //if есть minus скобки закрыты
+	}else if(src == parent.buttonMINUS && operands.contains(" -") && !inputStream.get(inputStream.size()-2).equals("-") && !coupleMinus == true){ //if есть minus скобки закрыты
 		
 		operands.set(arrMINUS," -");
 		numbers= numbers+" - ";
 		
-	}else if(src == parent.buttonMINUS && !spstr.equals("open") && operands.contains(" +") && !inputStream.get(inputStream.size()-2).equals("-") && !coupleMinus == true){ //if есть plus скобки закрыты
+	}else if(src == parent.buttonMINUS && operands.contains(" +") && !inputStream.get(inputStream.size()-2).equals("-") && !coupleMinus == true){ //if есть plus 
 		
 		operands.set(arrPLUS," -");
-		numbers= numbers+" + ";
-		
-	}else if(src == parent.buttonMINUS && spstr.equals("open") && !first.contains(" -") && !first.contains(" +") && !coupleMinus4braces == true){
-		
-		first.add(" -");
-		numbers= numbers+" ";
-		
-	}else if(src == parent.buttonMINUS && spstr.equals("open") && first.contains(" -") && !coupleMinus4braces == true){
-		
-		first.set(arrMINUSBraces," -");
-		numbers= numbers+" - ";
-		
-	}else if(src == parent.buttonMINUS && spstr.equals("open") && first.contains(" +") && !coupleMinus4braces == true){
-		
-		first.set(arrPLUSBraces," -");
 		numbers= numbers+" + ";
 		
 	}
 	
 	
 	
-	if(src == parent.buttonMINUS && inputStream.size()>1 && inputStream.get(inputStream.size()-2).equals("-") && !spstr.equals("open")){ 
+	if(src == parent.buttonMINUS && inputStream.size()>1 && inputStream.get(inputStream.size()-2).equals("-")){ 
 		coupleMinus = true;
 	}
 	
@@ -355,59 +342,61 @@ public class calcEngine implements ActionListener{
 		}
 	}
 	
-	if(src == parent.buttonMINUS && inputStream.size()>2 && inputStream.get(inputStream.size()-2).equals("-") && spstr.equals("open")){
-		coupleMinus4braces = true;
-	}
-	
-	if(coupleMinus4braces == true){
-		first.remove(operands.size()-1);
-		first.set(operands.size()-1, " +");
-		coupleMinus4braces = false;
-	}
 	
 	//ЦИФРЫ
 		for(byte i=0;i<parent.buttonarr.length;i++ ){
 			
-			if(src == parent.buttonarr[i] && !degree.equals("^") && !minusDeg.equals("yes")){
+			if(src == parent.buttonarr[i]){
 				numbers = numbers+i;
 				inputStream.add(""+i);
-			}else if(src == parent.buttonarr[i] && degree.equals("^") && !minusDeg.equals("yes")){
-				numbers = numbers+"^ "+i;
-				degree = "";
-				inputStream.add("^"+i);
-			}else if(src == parent.buttonarr[i] && degree.equals("^") && minusDeg.equals("yes")){
-				numbers = numbers+"^ -"+i;
-				degree = "";
-				inputStream.add("^-"+i);
-				minusDeg = "";
 			}
 		}
 		
 		
-		if(src == parent.buttonZERO && !degree.equals("^") && !minusDeg.equals("yes")){
+		if(src == parent.buttonZERO){
 			numbers = numbers+"0";
 			inputStream.add("0");
-		}else if(src == parent.buttonZERO && degree.equals("^") && !minusDeg.equals("yes")){
-			numbers = numbers+"^ 0";
-			degree = "";
-			inputStream.add("^0");
-		}else if(src == parent.buttonZERO && degree.equals("^") && minusDeg.equals("yes")){
-			numbers = numbers+"^ -0";
-			degree = "";
-			inputStream.add("^-0");
-			minusDeg = "";
 		}
 	
+		//3.141
+		
+		if(src == parent.buttonPI){
+			numbers = numbers+Math.PI;
+	        inputStream.add("3.141");
+	    }
 		
 	//EQUAL
-	
-	if(!operDump.isEmpty() && operands.isEmpty() && o==c){
-		numbers = numbers+operDump;
+		
+	if(src == parent.buttonEQUAL && o==c){                            //если использовались скобки
+		
+       for(int j = 0; j<operandsDump.size(); j++){                    //выброс оставшихся операций 
+		operands.add(operandsDump.get(j));
+       }
+       
+       String[] array1 = pat2.split(numbers);                            //делит строку цифр 
+       
+       for(int b = 0; b<array1.length; b++){
+		try{
+			if(array1[b].equals("-") && array1[b-1].equals("-")){    //если два минуса подряд заменяет их плюсом
+		
+				array1[b] ="";
+				array1[b-1] ="";
+				checker = true;                                      
+				numbers = "";
+			}
+		}catch(IndexOutOfBoundsException e){}
+	}	
+		for(int b = 0; b<array1.length; b++){                         //создаёт numbers соответствующий новым условиям (плюс вместо двух минусов)
+			if(checker != false){
+				numbers = numbers+array1[b];
+			}
+		}
 	}
+     
+	
 	
 	if(src == parent.buttonEQUAL){
-	parent.dfe.setText(displaytextfield+"");
-		
+	
 	operands1 = operands.toArray(new String[operands.size()]);
 	String[] operandsFinal = new String[operands.size()]; 
 	
@@ -416,6 +405,9 @@ public class calcEngine implements ActionListener{
 		operandsFinal[j] = operands1[operands.size()-j-1];
 		numbers = numbers+operandsFinal[j];
 	}
+	
+	String fin = rpn.getAnswer(numbers); 
+	parent.dfe.setText(fin);
 	}
 	
 	
@@ -423,8 +415,9 @@ public class calcEngine implements ActionListener{
 	//System.out.println(coupleMinus);
 	
 	
-	//inputStream.forEach((String value) -> System.out.println(value));
-    operands.forEach((String val) -> System.out.println("oper^"+val));
+	//numbersDump.forEach((String value) -> System.out.println(value));
+    //operands.forEach((String val) -> System.out.println("oper^"+val));
+    
 	}
 	
 }
